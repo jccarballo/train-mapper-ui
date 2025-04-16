@@ -17,7 +17,9 @@ This project visualizes a train route on an interactive map using [Leaflet.js](h
 ├── index.html
 ├── app.js
 ├── routes/
+│   └── index.json
 │   └── bilbao-donosti.json
+│   └── vitoria-zaragoza.json
 └── styles.css
 ```
 
