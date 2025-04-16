@@ -1,0 +1,58 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs
+*.log
+*.log.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build output
+dist/
+build/
+out/
+coverage/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Dependency directories
+jspm_packages/
+
+# Parcel cache
+.cache/
+
+# Vite
+.vite/
+
+# Optional: if using Leaflet plugins downloaded manually
+leaflet-plugins/
+
+# Optional: if using testing
+coverage/
+*.lcov
+
+# Optional: local server config
+*.local.js
+
+# Optional: if using GitHub Codespaces or other cloud IDEs
+.devcontainer/
+
+# Optional: if deploying with Netlify or Vercel
+.netlify/
+.vercel/
