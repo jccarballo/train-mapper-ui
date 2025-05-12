@@ -7,18 +7,22 @@
     <title>Gestión de mapas con Leaflet.js</title>
     <link rel="stylesheet" href="/lib/leaflet/leaflet.css" />
     <link rel="stylesheet" href="styles.css" />
-    <style>
-        #train-map {
-            width: 1024px;
-            height: 800px;
-        }
-    </style>
 </head>
 
 <body>
     <div id="train-map"></div>
+    <div id="train-info">
+        <span><strong>Service:</strong> E102</span>&nbsp;
+        <span><strong>Departure time:</strong> 10:35</span>&nbsp;
+        <span><strong>Destination:</strong> Donosti / San Sebastián</span>&nbsp;
+        <span><strong>Arrival Time:</strong> 12:18</span>&nbsp;
+        <span><strong>NextStation:</strong> Azitain</span>
+    </div>
+    <!-- <div id="train-diagram"></div> -->
+    <svg width="1024" height="200" class="svg-bordered"></svg>
 
     <script src="/lib/leaflet/leaflet.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="app.js"></script>
 </body>
 

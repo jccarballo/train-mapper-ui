@@ -33,12 +33,8 @@ const renderRoutesOnSingleMap = (mapId, routes) => {
     const pendingRoute = coords.slice(closestIndex);
 
     // Rutas completas y pendientes
-    L.polyline(completedRoute, { color: "green", weight: 5 }).addTo(map);
-    L.polyline(pendingRoute, {
-      color: "gray",
-      weight: 5,
-      dashArray: "5, 10"
-    }).addTo(map);
+    L.polyline(completedRoute, { color: "gray", weight: 5 }).addTo(map);
+    L.polyline(pendingRoute, { color: "green", weight: 5 }).addTo(map);
 
     // Marcadores de estaciones
     coords.forEach((coord, i) => {
@@ -79,7 +75,83 @@ const renderRoutesOnSingleMap = (mapId, routes) => {
   map.fitBounds(bounds);
 };
 
+const drawDiagram = () => {
+  const stations = [
+    { name: "Connolly Station", color: "gray" },
+    { name: "Clontarf Road", color: "gray" },
+    { name: "Killester", color: "gray" },
+    { name: "Harmonstown", color: "gray" },
+    { name: "Raheny", color: "green" },
+    { name: "Kilbarrack", color: "green" },
+    { name: "Clongriffin", color: "green" }
+  ];
+
+  const svgWidth = 1024;
+  const svgHeight = 200;
+  const paddingHorizontal = 40;
+  const paddingTop = 50;
+  const circleRadius = 12;
+
+  const usableWidth = svgWidth - 2 * paddingHorizontal;
+  const spacing = usableWidth / (stations.length - 1);
+
+  // Fijamos el eje Y a una distancia constante desde arriba
+  const offsetY = paddingTop;
+
+  const svg = d3.select("svg");
+
+  // Dibujar líneas entre estaciones
+  svg.selectAll("line")
+    .data(stations.slice(0, -1))
+    .enter()
+    .append("line")
+    .attr("x1", (d, i) => paddingHorizontal + i * spacing)
+    .attr("y1", offsetY)
+    .attr("x2", (d, i) => paddingHorizontal + (i + 1) * spacing)
+    .attr("y2", offsetY)
+    .attr("stroke", (d, i) => {
+      const currentColor = stations[i].color;
+      return currentColor === "gray" ? "#CCCCCC" : currentColor;
+    })
+    .attr("stroke-width", 5);
+
+  // Dibujar círculos (estaciones)
+  svg.selectAll("circle")
+    .data(stations)
+    .enter()
+    .append("circle")
+    .attr("cx", (d, i) => paddingHorizontal + i * spacing)
+    .attr("cy", offsetY)
+    .attr("r", circleRadius)
+    .attr("fill", d => {
+      if (d.color === "gray") return "#999999";        // gris oscuro
+      if (d.color === "green") return "#66bb66";        // verde más suave
+      return d.color;
+    })
+    .attr("stroke", d => {
+      if (d.color === "gray") return "black";           // borde negro para grises
+      if (d.color === "green") return "green";          // borde igual que la línea verde
+      return "none";
+    })
+    .attr("stroke-width", d => d.color === "gray" ? 2 : (d.color === "green" ? 2 : 0));
+
+
+  // Dibujar nombres en vertical con Arial 10
+  svg.selectAll("text")
+    .data(stations)
+    .enter()
+    .append("text")
+    .attr("x", (d, i) => paddingHorizontal + i * spacing)
+    .attr("y", offsetY + 30)
+    .attr("transform", (d, i) => `rotate(-90, ${paddingHorizontal + i * spacing}, ${offsetY + 30})`)
+    .attr("text-anchor", "end")
+    .attr("font-size", "12px")
+    .attr("font-family", "Arial")
+    .text(d => d.name);
+};
+
 window.addEventListener("load", () => {
+
   fetch("routes/index.json")
     .then(response => response.json())
     .then(routeFiles => {
@@ -103,4 +175,7 @@ window.addEventListener("load", () => {
     .catch(error => {
       console.error("Error loading index of routes:", error);
     });
+
+  drawDiagram();
+
 });
