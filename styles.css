@@ -1,10 +1,10 @@
 
-#train-map {
+#route-map {
     width: 1024px;
     height: 600px;
 }
 
-#train-info {
+#route-info {
     width: 1024px;
     height: 30px;
     border: 1px solid black;
@@ -17,24 +17,16 @@
     white-space: nowrap;      
     font-family: sans-serif;
     font-size: 14px;
-    gap: 5px; 
-    background-color: #f0f0f0; /* Gris claro */
+    gap: 15px; 
+    background-color: #f0f0f0; 
 }
 
-
-/* #train-diagram {
-    width: 800px;
-    height: 200px;
+#route-diagram {
+    width: 1024px;
+    height: 230px;
     border: 1px solid black;
     margin-top: 10px;
-    display: flex;
-    align-items: center;
-} */
-
-.svg-bordered {
-    border: 1px solid black;
-    margin-top: 10px;
-  }
+}
 
 .pulse-marker {
     width: 10px;

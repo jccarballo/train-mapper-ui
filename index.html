@@ -10,19 +10,12 @@
 </head>
 
 <body>
-    <div id="train-map"></div>
-    <div id="train-info">
-        <span><strong>Service:</strong> E102</span>&nbsp;
-        <span><strong>Departure time:</strong> 10:35</span>&nbsp;
-        <span><strong>Destination:</strong> Donosti / San Sebastián</span>&nbsp;
-        <span><strong>Arrival Time:</strong> 12:18</span>&nbsp;
-        <span><strong>NextStation:</strong> Azitain</span>
-    </div>
-    <!-- <div id="train-diagram"></div> -->
-    <svg width="1024" height="230" class="svg-bordered"></svg>
+    <div id="route-map"></div>
+    <div id="route-info"></div>
+    <svg id="route-diagram"></svg>
 
     <script src="/lib/leaflet/leaflet.js"></script>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="/lib/d3/d3.v7.min.js"></script>
     <script src="app.js"></script>
 </body>
 

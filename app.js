@@ -1,241 +1,151 @@
-const currentPosition = [43.184419, -2.47135]; // Ejemplo: Eibar
-const allCoords = [];
+const CURRENT_POSITION = [43.184419, -2.47135]; // Eibar
+const TILE_LAYER_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+const TILE_LAYER_ATTRIBUTION = "&copy; OpenStreetMap contributors";
 
-const findClosestPointIndex = (route, currentPosition) => {
-  let minDistance = Infinity;
-  let closestIndex = 0;
+const calculateDistance = (a, b) =>
+  Math.hypot(a[0] - b[0], a[1] - b[1]);
 
-  for (let i = 0; i < route.length; i++) {
-    const dist = Math.sqrt(
-      Math.pow(route[i][0] - currentPosition[0], 2) +
-      Math.pow(route[i][1] - currentPosition[1], 2)
-    );
-    if (dist < minDistance) {
-      minDistance = dist;
-      closestIndex = i;
-    }
-  }
-  return closestIndex;
-};
+const findClosestPointIndex = (route, currentPos) =>
+  route.reduce((closestIdx, coord, i) =>
+    calculateDistance(coord, currentPos) < calculateDistance(route[closestIdx], currentPos)
+      ? i : closestIdx, 0);
 
-const renderRoutesOnSingleMap = (mapId, routes) => {
-  const map = L.map(mapId);
-  let bounds = [];
+const createCircleMarker = (coord, label) =>
+  L.circleMarker(coord, {
+    radius: 5,
+    fillColor: "blue",
+    color: "darkblue",
+    weight: 1,
+    opacity: 1,
+    fillOpacity: 0.9
+  }).bindPopup(label);
 
-  routes.forEach(({ coords, names }) => {
-    if (coords.length === 0) return;
-
-    // Añadir a los límites totales
-    bounds = bounds.concat(coords);
-
-    const closestIndex = findClosestPointIndex(coords, currentPosition);
-    const completedRoute = coords.slice(0, closestIndex + 1);
-    const pendingRoute = coords.slice(closestIndex);
-
-    // Rutas completas y pendientes
-    L.polyline(completedRoute, { color: "gray", weight: 5 }).addTo(map);
-    L.polyline(pendingRoute, { color: "green", weight: 5 }).addTo(map);
-
-    // Marcadores de estaciones
-    coords.forEach((coord, i) => {
-      L.circleMarker(coord, {
-        radius: 5,
-        fillColor: "blue",
-        color: "darkblue",
-        weight: 1,
-        opacity: 1,
-        fillOpacity: 0.9
-      })
-        .addTo(map)
-        .bindPopup(names[i]);
-    });
-
-    // Origen y destino
-    L.marker(coords[0]).addTo(map).bindPopup("Origen: " + names[0]);
-    L.marker(coords[coords.length - 1]).addTo(map).bindPopup("Destino: " + names[names.length - 1]);
-  });
-
-  // Posición actual del tren
-  L.marker(currentPosition, {
+const addCurrentPositionMarker = (map) =>
+  L.marker(CURRENT_POSITION, {
     icon: L.divIcon({
       className: "",
       html: `<div class="pulse-marker"></div>`,
       iconSize: [10, 10],
       iconAnchor: [10, 10],
-    }),
-  })
-    .addTo(map)
-    .bindPopup("🚆 Posición actual del tren");
+    })
+  }).addTo(map).bindPopup("🚆 Posición actual del tren");
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "&copy; OpenStreetMap contributors"
-  }).addTo(map);
+const renderRoutesOnMap = (mapId, routes) => {
+  const map = L.map(mapId);
+  const allCoords = [];
 
-  // Ajustar el mapa para mostrar todos los puntos
-  map.fitBounds(bounds);
+  routes.forEach(({ coords, names }) => {
+    if (!coords.length) return;
+
+    allCoords.push(...coords);
+
+    const closestIndex = findClosestPointIndex(coords, CURRENT_POSITION);
+    const completed = coords.slice(0, closestIndex + 1);
+    const pending = coords.slice(closestIndex);
+
+    L.polyline(completed, { color: "gray", weight: 5 }).addTo(map);
+    L.polyline(pending, { color: "green", weight: 5 }).addTo(map);
+
+    coords.forEach((coord, i) => createCircleMarker(coord, names[i]).addTo(map));
+
+    L.marker(coords[0]).addTo(map).bindPopup(`Origen: ${names[0]}`);
+    L.marker(coords.at(-1)).addTo(map).bindPopup(`Destino: ${names.at(-1)}`);
+  });
+
+  addCurrentPositionMarker(map);
+
+  L.tileLayer(TILE_LAYER_URL, { attribution: TILE_LAYER_ATTRIBUTION }).addTo(map);
+  map.fitBounds(allCoords);
 };
 
-// const drawDiagram = () => {
-//   const stations = [
-//     { name: "Connolly Station", color: "gray" },
-//     { name: "Clontarf Road", color: "gray" },
-//     { name: "Killester", color: "gray" },
-//     { name: "Harmonstown", color: "gray" },
-//     { name: "Raheny", color: "green" },
-//     { name: "Kilbarrack", color: "green" },
-//     { name: "Clongriffin", color: "green" }
-//   ];
-
-//   const svgWidth = 1024;
-//   const svgHeight = 200;
-//   const paddingHorizontal = 40;
-//   const paddingTop = 50;
-//   const circleRadius = 12;
-
-//   const usableWidth = svgWidth - 2 * paddingHorizontal;
-//   const spacing = usableWidth / (stations.length - 1);
-
-//   // Fijamos el eje Y a una distancia constante desde arriba
-//   const offsetY = paddingTop;
-
-//   const svg = d3.select("svg");
-
-//   // Dibujar líneas entre estaciones
-//   svg.selectAll("line")
-//     .data(stations.slice(0, -1))
-//     .enter()
-//     .append("line")
-//     .attr("x1", (d, i) => paddingHorizontal + i * spacing)
-//     .attr("y1", offsetY)
-//     .attr("x2", (d, i) => paddingHorizontal + (i + 1) * spacing)
-//     .attr("y2", offsetY)
-//     .attr("stroke", (d, i) => {
-//       const currentColor = stations[i].color;
-//       return currentColor === "gray" ? "#CCCCCC" : currentColor;
-//     })
-//     .attr("stroke-width", 5);
-
-//   // Dibujar círculos (estaciones)
-//   svg.selectAll("circle")
-//     .data(stations)
-//     .enter()
-//     .append("circle")
-//     .attr("cx", (d, i) => paddingHorizontal + i * spacing)
-//     .attr("cy", offsetY)
-//     .attr("r", circleRadius)
-//     .attr("fill", d => {
-//       if (d.color === "gray") return "#999999";        // gris oscuro
-//       if (d.color === "green") return "#66bb66";        // verde más suave
-//       return d.color;
-//     })
-//     .attr("stroke", d => {
-//       if (d.color === "gray") return "black";           // borde negro para grises
-//       if (d.color === "green") return "green";          // borde igual que la línea verde
-//       return "none";
-//     })
-//     .attr("stroke-width", d => d.color === "gray" ? 2 : (d.color === "green" ? 2 : 0));
-
-
-//   // Dibujar nombres en vertical con Arial 10
-//   svg.selectAll("text")
-//     .data(stations)
-//     .enter()
-//     .append("text")
-//     .attr("x", (d, i) => paddingHorizontal + i * spacing)
-//     .attr("y", offsetY + 30)
-//     .attr("transform", (d, i) => `rotate(-90, ${paddingHorizontal + i * spacing}, ${offsetY + 30})`)
-//     .attr("text-anchor", "end")
-//     .attr("font-size", "12px")
-//     .attr("font-family", "Arial")
-//     .text(d => d.name);
-// };
-
-const drawDiagram = async () => {
-
+const drawRouteDiagram = async () => {
   const response = await fetch("/routes/bilbao-donosti.json");
-
   const stations = await response.json();
 
-  const currentStation = "Eibar";
-  const currentIndex = stations.findIndex(s => s.name === currentStation);
+  const CURRENT_STATION = "Eibar";
+  const currentIndex = stations.findIndex(s => s.name === CURRENT_STATION);
 
-  const svgWidth = 1024;
-  const svgHeight = 200;
-  const paddingHorizontal = 40;
-  const paddingTop = 50;
-  const circleRadius = 12;
+  const svg = d3.select("#route-diagram");
+  svg.selectAll("*").remove();
 
-  const usableWidth = svgWidth - 2 * paddingHorizontal;
-  const spacing = usableWidth / (stations.length - 1);
-  const offsetY = paddingTop;
+  const WIDTH = 1024, PADDING_X = 40, OFFSET_Y = 50, RADIUS = 12;
+  const SPACING = (WIDTH - 2 * PADDING_X) / (stations.length - 1);
 
-  const svg = d3.select("svg");
-  svg.selectAll("*").remove(); // limpiar SVG antes de redibujar
-
-  // Dibujar líneas entre estaciones
+  // Líneas
   svg.selectAll("line")
     .data(stations.slice(0, -1))
-    .enter()
-    .append("line")
-    .attr("x1", (d, i) => paddingHorizontal + i * spacing)
-    .attr("y1", offsetY)
-    .attr("x2", (d, i) => paddingHorizontal + (i + 1) * spacing)
-    .attr("y2", offsetY)
-    .attr("stroke", (d, i) => i < currentIndex ? "#CCCCCC" : "#66bb66")
+    .enter().append("line")
+    .attr("x1", (_, i) => PADDING_X + i * SPACING)
+    .attr("y1", OFFSET_Y)
+    .attr("x2", (_, i) => PADDING_X + (i + 1) * SPACING)
+    .attr("y2", OFFSET_Y)
+    .attr("stroke", (_, i) => i < currentIndex ? "#CCCCCC" : "#66bb66")
     .attr("stroke-width", 5);
 
-  // Dibujar círculos (estaciones)
+  // Círculos
   svg.selectAll("circle")
     .data(stations)
-    .enter()
-    .append("circle")
-    .attr("cx", (d, i) => paddingHorizontal + i * spacing)
-    .attr("cy", offsetY)
-    .attr("r", circleRadius)
-    .attr("fill", (d, i) => i <= currentIndex ? "#999999" : "#66bb66")
-    .attr("stroke", (d, i) => i <= currentIndex ? "black" : "green")
+    .enter().append("circle")
+    .attr("cx", (_, i) => PADDING_X + i * SPACING)
+    .attr("cy", OFFSET_Y)
+    .attr("r", RADIUS)
+    .attr("fill", (_, i) => i <= currentIndex ? "#999999" : "#66bb66")
+    .attr("stroke", (_, i) => i <= currentIndex ? "black" : "green")
     .attr("stroke-width", 2);
 
-  // Dibujar nombres en vertical con Arial 10
+  // Nombres
   svg.selectAll("text")
     .data(stations)
-    .enter()
-    .append("text")
-    .attr("x", (d, i) => paddingHorizontal + i * spacing)
-    .attr("y", offsetY + 30)
-    .attr("transform", (d, i) => `rotate(-90, ${paddingHorizontal + i * spacing}, ${offsetY + 30})`)
+    .enter().append("text")
+    .attr("x", (_, i) => PADDING_X + i * SPACING)
+    .attr("y", OFFSET_Y + 30)
+    .attr("transform", (_, i) => `rotate(-90, ${PADDING_X + i * SPACING}, ${OFFSET_Y + 30})`)
     .attr("text-anchor", "end")
     .attr("font-size", "12px")
     .attr("font-family", "Arial")
     .text(d => d.name);
 };
 
+const loadRoutes = async () => {
+  try {
+    const routeList = await fetch("routes/index.json").then(res => res.json());
+    const routes = await Promise.all(routeList.map(async file => {
+      const data = await fetch(`routes/${file}`).then(res => res.json());
+      return {
+        coords: data.map(p => [p.x, p.y]),
+        names: data.map(p => p.name)
+      };
+    }));
+    renderRoutesOnMap("route-map", routes);
+  } catch (err) {
+    console.error("Error loading routes:", err);
+  }
+};
+
+const updateRouteInfo = ({ service, departureTime, destination, arrivalTime, nextStation }) => {
+  const container = document.getElementById("route-info");
+  container.innerHTML = `
+    <span><strong>Service:</strong> ${service}</span>
+    <span><strong>Departure time:</strong> ${departureTime}</span>
+    <span><strong>Destination:</strong> ${destination}</span>
+    <span><strong>Arrival Time:</strong> ${arrivalTime}</span>
+    <span><strong>NextStation:</strong> ${nextStation}</span>
+  `;
+};
+
 window.addEventListener("load", () => {
+  loadRoutes();
 
-  fetch("routes/index.json")
-    .then(response => response.json())
-    .then(routeFiles => {
-      const fetches = routeFiles.map(file =>
-        fetch(`routes/${file}`)
-          .then(res => res.json())
-          .then(data => ({
-            coords: data.map(p => [p.x, p.y]),
-            names: data.map(p => p.name)
-          }))
-      );
+  const routeData = {
+    service: "E102",
+    departureTime: "10:35",
+    destination: "Donosti / San Sebastián",
+    arrivalTime: "12:18",
+    nextStation: "Elgoibar"
+  };
 
-      Promise.all(fetches)
-        .then(routes => {
-          renderRoutesOnSingleMap("train-map", routes);
-        })
-        .catch(err => {
-          console.error("Error loading routes:", err);
-        });
-    })
-    .catch(error => {
-      console.error("Error loading index of routes:", error);
-    });
+  updateRouteInfo(routeData);
 
-  drawDiagram();
-
+  drawRouteDiagram();
 });
+
